@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EchoHybrid | 96.5% Accurate 2CH/4CH Echocardiogram AI | SR University</title>
+    
+    <!-- Meta Tags -->
+    <meta name="description" content="96.5% accurate AI for 2CH/4CH echocardiogram classification. Hybrid RDN-CNN ensemble on CAMUS dataset. Patient-stratified 5-fold CV.">
+    <meta name="keywords" content="echocardiogram, AI, cardiology, RDN, CNN, CAMUS, hybrid ensemble">
+    <meta name="author" content="Mohammed Ali Shaik & Adupa Vivek, SR University">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>Heart</text></svg>">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- AOS Animation -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary: #1e40af;
+            --secondary: #3b82f6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            --border-radius: 24px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.7;
+            color: #374151;
+            overflow-x: hidden;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: rgba(255, 255, 255, 0.98) !important;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.6rem;
+            color: var(--primary) !important;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .nav-link {
+            color: #6b7280 !important;
+            font-weight: 500;
+            padding: 0.75rem 1.5rem !important;
+            margin: 0 0.25rem;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: white !important;
+            background: var(--gradient);
+            transform: translateY(-2px);
+        }
+
+        /* Hero */
+        #hero {
+            min-height: 100vh;
+            background: 
+                linear-gradient(rgba(30, 64, 175, 0.9), rgba(59, 130, 246, 0.8)),
+                url('https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') center/cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .hero-content { max-width: 1200px; text-align: center; padding: 2rem; }
+        .hero-title {
+            font-size: clamp(2.5rem, 5vw, 4.5rem);
+            font-weight: 800;
+            margin-bottom: 2rem;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .hero-metrics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            justify-content: center;
+            margin: 3rem 0;
+        }
+        .metric-card {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(10px);
+            padding: 2rem 1.5rem;
+            border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.2);
+            min-width: 200px;
+            transition: all 0.4s ease;
+        }
+        .metric-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255,255,255,0.25);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        }
+        .metric-number {
+            font-size: 3rem;
+            font-weight: 800;
+            display: block;
+            color: #fff;
+        }
+        .metric-label {
+            font-size: 1rem;
+            opacity: 0.9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Sections */
+        .section { padding: 100px 0; }
+        .section-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: 4rem;
+            position: relative;
+        }
+        .section-title::after {
+            content: '';
+            width: 100px;
+            height: 4px;
+            background: var(--gradient);
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 2px;
+        }
+
+        /* Cards */
+        .content-card {
+            background: white;
+            border-radius: 24px;
+            padding: 3rem;
+            margin-bottom: 3rem;
+            box-shadow: var(--shadow);
+            transition: all 0.4s ease;
+            border: 1px solid #e5e7eb;
+        }
+        .content-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 35px 60px rgba(0,0,0,0.15);
+        }
+
+        /* Tables */
+        .performance-table {
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin: 3rem 0;
+        }
+        .performance-table th {
+            background: var(--gradient);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            font-weight: 600;
+        }
+        .performance-table td {
+            padding: 1.2rem;
+            text-align: center;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .performance-table tr:hover { background: #f8fafc; }
+        .best-performance {
+            background: linear-gradient(135deg, #10b981, #059669) !important;
+            color: white !important;
+            font-weight: 700;
+        }
+
+        /* Slideshow - FULLY FIXED */
+        .demo-slideshow {
+            max-width: 1100px;
+            margin: 3rem auto;
+            position: relative;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        .demo-slide {
+            display: none;
+            position: relative;
+        }
+        .demo-slide.active {
+            display: block;
+        }
+        .demo-slide img {
+            width: 100%;
+            height: 500px;
+            object-fit: cover;
+            display: block;
+        }
+        .slide-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        .slide-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .prev, .next {
+            cursor: pointer;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        .prev { left: 20px; }
+        .next { right: 20px; }
+        .prev:hover, .next:hover {
+            background: var(--primary);
+            transform: translateY(-50%) scale(1.1);
+        }
+        .dots-container {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+        .dot {
+            height: 12px;
+            width: 12px;
+            margin: 0 6px;
+            background-color: #bbb;
+            border-radius: 50%;
+            display: inline-block;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .dot.active, .dot:hover {
+            background-color: var(--primary);
+            transform: scale(1.3);
+        }
+
+        /* Contact */
+        .contact-section {
+            background: var(--gradient);
+            color: white;
+            padding: 100px 0;
+        }
+        .contact-form {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 3rem;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .form-control {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 12px;
+            color: white;
+            padding: 1rem 1.2rem;
+        }
+        .form-control::placeholder { color: rgba(255,255,255,0.7); }
+        .btn-primary-custom {
+            background: var(--success);
+            border: none;
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+        .btn-primary-custom:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(16,185,129,0.4);
+        }
+
+        /* Footer */
+        .footer {
+            background: #0f172a;
+            color: #94a3b8;
+            padding: 4rem 0 2rem;
+            text-align: center;
+        }
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .social-link {
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            transition: all 0.4s ease;
+        }
+        .social-link:hover {
+            transform: translateY(-8px) scale(1.1);
+            background: var(--secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-title { font-size: 2.8rem; }
+            .section-title { font-size: 2.2rem; }
+            .demo-slide img { height: 300px; }
+            .prev, .next { width: 40px; height: 40px; font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg">
+    <div class="container">
+        <a class="navbar-brand" href="#">
+            <i class="fas fa-heartbeat"></i> EchoHybrid
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link active" href="#hero">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="#abstract">About</a></li>
+                <li class="nav-item"><a class="nav-link" href="#methodology">Methodology</a></li>
+                <li class="nav-item"><a class="nav-link" href="#results">Results</a></li>
+                <li class="nav-item"><a class="nav-link" href="#demo">Demo</a></li>
+                <li class="nav-item"><a class="nav-link" href="#authors">Authors</a></li>
+                <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero -->
+<section id="hero">
+    <div class="hero-content">
+        <h1 class="hero-title">Hybrid Multi-Model Ensemble<br>Framework for Echocardiogram<br>View Classification</h1>
+        <p class="hero-subtitle">
+            <strong>96.5% Test Accuracy | 0.989 AUC</strong><br>
+            <small>CAMUS Dataset • 450 Patients • Patient-Stratified 5-Fold CV</small>
+        </p>
+        <div class="hero-metrics">
+            <div class="metric-card">
+                <span class="metric-number">96.5%</span>
+                <span class="metric-label">Test Accuracy</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-number">0.989</span>
+                <span class="metric-label">Test AUC</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-number">+3.8%</span>
+                <span class="metric-label">vs Baseline</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Abstract -->
+<section id="abstract" class="section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="content-card">
+                    <h2 class="section-title">What's New?</h2>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <img src="https://substackcdn.com/image/fetch/$s_!3SFO!,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F3130ab23-a5c8-4d74-9b28-176367871a1e_1024x768.png" 
+                                 alt="Echocardiogram" class="img-fluid rounded-3 shadow-lg" style="height: 350px; object-fit: cover;">
+                        </div>
+                        <div class="col-md-6">
+                            <p class="lead mb-4">
+                                Accurate classification of <strong>apical 2CH and 4CH views</strong> is essential for automated cardiac assessment but remains challenging due to <strong>acoustic noise, anatomical variability</strong>, and <strong>limited annotated data</strong>.
+                            </p>
+                            <p class="mb-4">
+                                This study proposes a <strong>novel hybrid ensemble framework</strong> integrating a <strong>lightweight Compact RDN</strong> with <strong>ResNet34, DenseNet121, EfficientNet-B0, MobileNetV3-Small</strong> achieving <strong>96.5% test accuracy</strong> and <strong>0.989 AUC</strong> on <strong>CAMUS dataset</strong>.
+                            </p>
+                            <div class="highlight-box p-3 bg-light rounded">
+                                <h3><i class="fas fa-star me-2"></i>Key Innovations</h3>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-cog text-primary me-2"></i>Ultrasound-optimized <strong>Compact RDN</strong></li>
+                                    <li><i class="fas fa-snowflake text-info me-2"></i><strong>Speckle/Gaussian</strong> noise augmentations</li>
+                                    <li><i class="fas fa-sync-alt text-success me-2"></i><strong>EMA + TTA</strong> stabilization</li>
+                                    <li><i class="fas fa-layer-group text-warning me-2"></i><strong>640-dim Hybrid Fusion</strong></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Methodology -->
+<section id="methodology" class="section bg-light">
+    <div class="container">
+        <h2 class="section-title">Methodology</h2>
+        
+        <!-- Dataset Table -->
+        <div class="content-card mb-5">
+            <h3 class="text-center mb-4">CAMUS Dataset Split</h3>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-primary">
+                        <tr>
+                            <th>Split</th>
+                            <th>Patients</th>
+                            <th>Images</th>
+                            <th>2CH</th>
+                            <th>4CH</th>
+                            <th>Resolution</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Train/Val</strong></td>
+                            <td>360</td>
+                            <td>1,440</td>
+                            <td>720 (50%)</td>
+                            <td>720 (50%)</td>
+                            <td>224×224</td>
+                        </tr>
+                        <tr class="table-success">
+                            <td><strong>Test</strong></td>
+                            <td><strong>90</strong></td>
+                            <td><strong>360</strong></td>
+                            <td><strong>180 (50%)</strong></td>
+                            <td><strong>180 (50%)</strong></td>
+                            <td><strong>224×224</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Architecture -->
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="content-card">
+                    <h3>Hybrid Ensemble Architecture</h3>
+                    <img src="flow-chart-edited.png" 
+                         alt="Architecture Diagram" class="img-fluid rounded-3 mb-3" style="max-height: 500px;">
+                    <p class="text-center">
+                        <strong>RDN (1.2M params) + 4 CNNs → 640-dim Feature Fusion</strong>
+                    </p>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="card text-center p-3 border-primary">
+                            <h4>Compact RDN</h4>
+                            <p>4 RDBs, Growth Rate 24<br><strong>Noise-Resilient</strong></p>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="card text-center p-3 border-info">
+                            <h4>Augmentations</h4>
+                            <p>Speckle + Gaussian +<br><strong>Salt & Pepper</strong></p>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="card text-center p-3 border-success">
+                            <h4>EMA + TTA</h4>
+                            <p>Decay 0.999 +<br><strong>Test-Time Aug</strong></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Results -->
+<section id="results" class="section">
+    <div class="container">
+        <h2 class="section-title">Experimental Results</h2>
+        
+        <!-- Best Performance Table -->
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="performance-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>Best Accuracy</th>
+                                <th>Fold</th>
+                                <th>Best AUC</th>
+                                <th>Fold</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>RDN</td><td>51.39%</td><td>3</td><td>0.8579</td><td>2</td></tr>
+                            <tr class="best-performance"><td><strong>ResNet34</strong></td><td><strong>98.61%</strong></td><td><strong>3</strong></td><td><strong>0.9996</strong></td><td><strong>3</strong></td></tr>
+                            <tr><td>DenseNet121</td><td>98.06%</td><td>3</td><td>0.9986</td><td>3</td></tr>
+                            <tr><td>EfficientNet-B0</td><td>95.83%</td><td>3</td><td>0.9956</td><td>3</td></tr>
+                            <tr><td>MobileNetV3-Small</td><td>96.11%</td><td>3</td><td>0.9953</td><td>3</td></tr>
+                            <tr class="best-performance"><td><strong>Hybrid Ensemble</strong></td><td><strong>98.06%</strong></td><td><strong>3</strong></td><td><strong>0.9949</strong></td><td><strong>3</strong></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Performance -->
+        <div class="row mt-5">
+            <div class="col-md-4">
+                <div class="card text-center p-4 border-primary">
+                    <h1 class="display-4 text-primary mb-2">96.5%</h1>
+                    <h5 class="text-muted">Mean Accuracy</h5>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center p-4 border-success">
+                    <h1 class="display-4 text-success mb-2">0.989</h1>
+                    <h5 class="text-muted">Mean AUC</h5>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center p-4 border-warning">
+                    <h1 class="display-4 text-warning mb-2">+3.8%</h1>
+                    <h5 class="text-muted">vs Baseline</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Demo - FULLY WORKING -->
+<section id="demo" class="section bg-light">
+    <div class="container">
+        <h2 class="section-title">Live System Demo</h2>
+        <div class="demo-slideshow">
+            <div class="demo-slide active">
+                <img src="demo1.png" alt="Upload Echo Image">
+                <div class="slide-overlay">
+                    <div class="slide-title">1. Upload Echo Image</div>
+                    <p>Drag & drop or browse to upload grayscale echocardiogram</p>
+                </div>
+            </div>
+            <div class="demo-slide">
+                <img src="demo2.png" alt="Processing">
+                <div class="slide-overlay">
+                    <div class="slide-title">2. Hybrid Ensemble Processing</div>
+                    <p>RDN + 4 CNNs → 640-dim fusion → TTA inference</p>
+                </div>
+            </div>
+            <div class="demo-slide">
+                <img src="demo3.png" alt="Result">
+                <div class="slide-overlay">
+                    <div class="slide-title">3. Result: 2CH View (87.4% Confidence)</div>
+                    <p>Real-time classification with uncertainty visualization</p>
+                </div>
+            </div>
+            <a class="prev" onclick="changeSlide(-1)">❮</a>
+            <a class="next" onclick="changeSlide(1)">❯</a>
+        </div>
+        <div class="dots-container">
+            <span class="dot active" onclick="currentSlide(1)"></span>
+            <span class="dot" onclick="currentSlide(2)"></span>
+            <span class="dot" onclick="currentSlide(3)"></span>
+        </div>
+    </div>
+</section>
+
+<!-- Authors -->
+<section id="authors" class="section bg-light">
+    <div class="container">
+        <h2 class="section-title">Research Team</h2>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card p-4 text-center">
+                    <div class="mb-3">
+                        <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80" 
+                             alt="Mohammed Ali Shaik" class="rounded-circle" style="width: 120px; height: 120px;">
+                    </div>
+                    <h4>Mohammed Ali Shaik</h4>
+                    <p class="text-muted mb-2">School of Computer Science & AI</p>
+                    <p class="text-muted mb-3">SR University, Warangal</p>
+                    <a href="mailto:niharali@gmail.com" class="btn btn-outline-primary">Contact</a>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card p-4 text-center">
+                    <div class="mb-3">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80" 
+                             alt="Adupa Vivek" class="rounded-circle" style="width: 120px; height: 120px;">
+                    </div>
+                    <h4>Adupa Vivek</h4>
+                    <p class="text-muted mb-2">School of Computer Science & AI</p>
+                    <p class="text-muted mb-3">SR University, Warangal</p>
+                    <a href="mailto:adupavivek1234@gmail.com" class="btn btn-outline-primary">Contact</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact -->
+<section id="contact" class="contact-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="contact-form">
+                    <h2 class="text-center mb-4">Let's Collaborate</h2>
+                    <form>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <input type="text" class="form-control" placeholder="Full Name">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <input type="email" class="form-control" placeholder="Email Address">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="Subject">
+                        </div>
+                        <div class="mb-4">
+                            <textarea class="form-control" rows="5" placeholder="Your Message"></textarea>
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary-custom">Send Message</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="container">
+        <div class="social-links mb-3">
+            <a href="https://github.com/yourusername" class="social-link" target="_blank">
+                <i class="fab fa-github"></i>
+            </a>
+            <a href="https://linkedin.com" class="social-link" target="_blank">
+                <i class="fab fa-linkedin"></i>
+            </a>
+            <a href="mailto:niharali@gmail.com" class="social-link">
+                <i class="fas fa-envelope"></i>
+            </a>
+        </div>
+        <p class="mb-0">&copy; 2025 EchoHybrid | SR University | <a href="#" class="text-white">Privacy Policy</a></p>
+    </div>
+</footer>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+    AOS.init({ duration: 1000, once: true });
+
+    // Navbar scroll
+    window.addEventListener('scroll', () => {
+        document.querySelector('.navbar').classList.toggle('scrolled', window.scrollY > 100);
+    });
+
+    // Slideshow - FULLY WORKING
+    let slideIndex = 1;
+    showSlide(slideIndex);
+
+    function changeSlide(n) {
+        showSlide(slideIndex += n);
+    }
+
+    function currentSlide(n) {
+        showSlide(slideIndex = n);
+    }
+
+    function showSlide(n) {
+        const slides = document.getElementsByClassName("demo-slide");
+        const dots = document.getElementsByClassName("dot");
+        
+        if (n > slides.length) slideIndex = 1;
+        if (n < 1) slideIndex = slides.length;
+        
+        for (let i = 0; i < slides.length; i++) {
+            slides[i].classList.remove("active");
+        }
+        for (let i = 0; i < dots.length; i++) {
+            dots[i].className = dots[i].className.replace(" active", "");
+        }
+        
+        slides[slideIndex - 1].classList.add("active");
+        dots[slideIndex - 1].className += " active";
+    }
+
+    // Auto-slide every 5 seconds
+    setInterval(() => changeSlide(1), 5000);
+</script>
+</body>
+</html>
